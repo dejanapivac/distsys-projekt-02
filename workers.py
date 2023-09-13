@@ -1,4 +1,6 @@
 import asyncio
+import random
+import time
 
 from aiohttp import web
 
@@ -27,6 +29,7 @@ async def start_workers(ports):
 
 
 async def word_counter(request):
+    time.sleep(random.uniform(0.1, 0.3))
     json_request = await request.json()
     result = []
     for client_code in json_request:

@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import random
 
 import aiohttp
@@ -25,12 +26,17 @@ async def get_data(request):
         async with aiohttp.ClientSession() as session:
             tasks = []
             workers = await start_workers(session)
+            num_tasks = 0
             for worker, client_code in exhausted_zip(chunk_list(json_request), workers):
                 tasks.append(session.post(f"http://127.0.0.1:{worker['port']}/wordCounter", json=client_code))
+                [worker['client_ids'].append(client_code_id['id']) for client_code_id in client_code]
+                num_tasks += 1
+                print(f"Timestamp: {datetime.datetime.now()} - number of tasks sent {num_tasks}")
             results = await asyncio.gather(*tasks)
             results = [await result.json() for result in results]
-            print(results)
-        return web.json_response(results, status=200)
+            response = []
+            [response.extend(x) for x in results]
+        return web.json_response(response, status=200)
     except Exception as e:
         print(e)
         return web.json_response({"status": "failed"}, status=500)
@@ -57,6 +63,6 @@ def exhausted_zip(list1, list2):
     return result
 
 
-app = web.Application(client_max_size=20 * 1024 * 1024)
+app = web.Application(client_max_size=1024*1024*1024)
 app.router.add_routes(routes)
 web.run_app(app, port=8080)
