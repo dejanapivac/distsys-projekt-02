@@ -5,7 +5,7 @@ import aiohttp
 
 
 def client_extraction():
-    df = pd.read_json('file-000000000040.json', lines=True, nrows=1001)
+    df = pd.read_json('file-000000000040.json', lines=True, nrows=1000)
     content = [getattr(x, "content") for x in df.itertuples()]
     result = []
     for index, x in enumerate(content):

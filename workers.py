@@ -18,7 +18,7 @@ async def start_workers_endpoint(request):
 async def start_workers(ports):
     tasks = []
     for port in ports:
-        worker = web.Application()
+        worker = web.Application(client_max_size=20 * 1024 * 1024)
         worker.add_routes([web.post("/wordCounter", word_counter)])
         runner = web.AppRunner(worker)
         await runner.setup()
@@ -28,7 +28,12 @@ async def start_workers(ports):
 
 async def word_counter(request):
     json_request = await request.json()
-
+    result = []
+    for client_code in json_request:
+        words = client_code["code"].replace('\n', ' ').split()
+        words = len(words)
+        result.append({"id": client_code["id"], "word_number": words})
+    return web.json_response(result, status=200)
 
 app = web.Application()
 app.router.add_routes(routes)

@@ -1,3 +1,4 @@
+import asyncio
 import random
 
 import aiohttp
@@ -13,7 +14,7 @@ async def start_workers(session):
     ports = ports['ports']
     workers = []
     for port in ports:
-        workers.append({'wokrer_id': port, 'client_ids': []})
+        workers.append({'port': port, 'client_ids': []})
     return workers
 
 
@@ -22,10 +23,14 @@ async def get_data(request):
     try:
         json_request = await request.json()
         async with aiohttp.ClientSession() as session:
+            tasks = []
             workers = await start_workers(session)
             for worker, client_code in exhausted_zip(chunk_list(json_request), workers):
-                print(client_code, worker)
-        return web.json_response(status=200)
+                tasks.append(session.post(f"http://127.0.0.1:{worker['port']}/wordCounter", json=client_code))
+            results = await asyncio.gather(*tasks)
+            results = [await result.json() for result in results]
+            print(results)
+        return web.json_response(results, status=200)
     except Exception as e:
         print(e)
         return web.json_response({"status": "failed"}, status=500)
